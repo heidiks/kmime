@@ -1,0 +1,60 @@
+# .goreleaser.yml
+project_name: kmime
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - main: .
+    binary: kmime
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+    ldflags:
+      - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
+
+archives:
+  - format: tar.gz
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        format: zip
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^chore:'
+      - 'Merge pull request'
+      - 'Merge branch'
+
+release:
+  github:
+    owner: heidiks
+    name: kmime
+  draft: false
+  prerelease: "auto"
+  name_template: "{{.Tag}}"
+  header: |
+    ## Changes in {{.Tag}}
+  footer: |
+    ---
+    **Full Changelog**: https://github.com/heidiks/kmime/compare/{{ .PreviousTag }}...{{ .Tag }}
