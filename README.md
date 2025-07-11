@@ -1,4 +1,5 @@
 # kmime
+<img width="150" height="154" alt="image" src="https://github.com/user-attachments/assets/86f1fb5e-0b1d-4e61-bae0-2dd187182fd0" />
 
 `kmime` is a command-line utility that creates a temporary, interactive pod in Kubernetes by cloning the specification of an existing pod. It's designed for debugging, running one-off tasks, or exploring a pod's environment without altering the original resource.
 
