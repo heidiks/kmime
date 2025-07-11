@@ -11,7 +11,7 @@
 - **Interactive Shell**: Get an interactive `-it` shell (`bash` by default) in the new pod.
 - **Automatic Cleanup**: The temporary pod is automatically deleted when your session ends.
 - **Custom Naming**: Add a prefix and/or suffix to the new pod's name for easy identification.
-- **User Identification**: Automatically appends your sanitized git email or local hostname to the pod name.
+- **User Identification**: Automatically appends your sanitized git email or local hostname to the pod name. Can be disabled with the `--skip-identification` flag.
 - **Custom Labels**: Inject custom labels into the new pod.
 - **Inject Environment Variables**: Pass custom environment variables from a local file.
 - **JSON Logging**: Keeps a record of all created pods in a local `kmime_log.json` file.
@@ -36,7 +36,7 @@ mv kmime /usr/local/bin/
 The basic command structure is:
 
 ```
-kmime [source-pod-name] -n [namespace] [flags]
+kmime [source-pod-name] [command-to-run] -n [namespace] [flags]
 ```
 
 ### Examples
@@ -82,7 +82,16 @@ kmime my-app-pod-xyz -n production --env-file ./my.env
 ```
 *Inside the new pod, `$API_KEY` and `$LOG_LEVEL` will be available.*
 
-**5. Full Example**
+**5. Skipping User Identification**
+
+If you want a cleaner pod name without the user identifier, use the `--skip-identification` flag.
+
+```bash
+kmime my-app-pod-xyz -n production --skip-identification
+```
+*This will create a pod named something like `my-app-pod-xyz-1234`.*
+
+**6. Full Example**
 
 A command combining multiple options:
 
@@ -90,10 +99,11 @@ A command combining multiple options:
 kmime my-app-pod-xyz -n production \
   --prefix=debug- \
   --suffix=-task-123 \
+  --skip-identification \
   -l "app=importer" \
   -l "temp=true" \
-  --env-file importer.env 
-```
+  --env-file importer.env
+ ```
 
 ## Logging
 

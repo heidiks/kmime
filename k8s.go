@@ -60,7 +60,9 @@ func generateNewPodName(originalName, prefix, suffix, user string) string {
 	if suffix != "" {
 		nameParts = append(nameParts, suffix)
 	}
-	nameParts = append(nameParts, user)
+	if user != "" {
+		nameParts = append(nameParts, user)
+	}
 	nameParts = append(nameParts, fmt.Sprintf("%d", time.Now().UnixNano()%10000))
 
 	fullName := strings.Join(nameParts, "-")

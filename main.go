@@ -44,11 +44,16 @@ without altering the original pod.`,
 			log.Fatalf("❌ Error parsing env file: %v", err)
 		}
 
-		user, err := getUserIdentifier()
-		if err != nil {
-			log.Fatalf("❌ Error getting user identifier: %v", err)
+		skipIdentification, _ := cmd.Flags().GetBool("skip-identification")
+		var user string
+		if !skipIdentification {
+			var err error
+			user, err = getUserIdentifier()
+			if err != nil {
+				log.Fatalf("❌ Error getting user identifier: %v", err)
+			}
+			log.Printf("✅ User identifier: %s", user)
 		}
-		log.Printf("✅ User identifier: %s", user)
 
 		log.Println("🔄 Connecting to Kubernetes cluster...")
 		clientset, config, err := getKubeConfig()
@@ -130,6 +135,7 @@ func init() {
 	rootCmd.Flags().String("suffix", "", "Suffix for the new pod's name")
 	rootCmd.Flags().StringArrayP("label", "l", []string{}, "Add a label to the new pod (e.g., -l key=value)")
 	rootCmd.Flags().String("env-file", "", "Path to a file with environment variables to add to the pod")
+	rootCmd.Flags().Bool("skip-identification", false, "Skip appending user identification to the pod name")
 }
 
 func main() {
