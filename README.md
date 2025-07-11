@@ -36,7 +36,7 @@ mv kmime /usr/local/bin/
 The basic command structure is:
 
 ```
-kmime [source-pod-name] [command-to-run] -n [namespace] [flags]
+kmime [source-pod-name] -n [namespace] [flags]
 ```
 
 ### Examples
