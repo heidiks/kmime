@@ -1,0 +1,42 @@
+name: Release kmime
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+
+      - name: Build for Linux
+        run: GOOS=linux GOARCH=amd64 go build -o build/kmime-linux-amd64 .
+        
+      - name: Build for macOS (ARM64)
+        run: GOOS=darwin GOARCH=arm64 go build -o build/kmime-darwin-arm64 .
+
+      - name: Build for Windows
+        run: GOOS=windows GOARCH=amd64 go build -o build/kmime-windows-amd64.exe .
+
+      - name: Create Release and Upload Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            build/kmime-linux-amd64
+            build/kmime-darwin-arm64
+            build/kmime-windows-amd64.exe
+          body: |
+            Automated release for kmime.
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
