@@ -92,8 +92,7 @@ kmime my-app-pod-xyz -n production \
   --suffix=-task-123 \
   -l "app=importer" \
   -l "temp=true" \
-  --env-file importer.env \
-  python /app/run_import.py
+  --env-file importer.env 
 ```
 
 ## Logging
@@ -110,8 +109,7 @@ Example log entry:
     "namespace": "production",
     "user": "user-name",
     "command": [
-      "python",
-      "/app/run_import.py"
+      "bash"
     ],
     "prefix": "debug-",
     "suffix": "-task-123",
