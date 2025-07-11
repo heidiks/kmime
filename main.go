@@ -8,6 +8,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
+)
+
 var rootCmd = &cobra.Command{
 	Use:   "kmime [source-pod] [command]",
 	Short: "kmime creates a temporary, interactive pod by cloning an existing one.",
