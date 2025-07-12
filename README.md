@@ -18,6 +18,11 @@
 
 ## Installation
 
+```bash
+go install github.com/heidiks/kmime@latest
+```
+
+#### Buiding from Source
 To build `kmime` from the source, you need to have Go installed.
 
 ```bash
