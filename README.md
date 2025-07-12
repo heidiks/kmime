@@ -5,24 +5,13 @@
 
 `kmime` is a command-line utility that creates a temporary, interactive pod in Kubernetes by cloning the specification of an existing pod. It's designed for debugging, running one-off tasks, or exploring a pod's environment without altering the original resource.
 
-## Features
-
-- **Clone Existing Pods**: Instantly create a debug pod by copying the configuration of a running pod.
-- **Interactive Shell**: Get an interactive `-it` shell (`bash` by default) in the new pod.
-- **Automatic Cleanup**: The temporary pod is automatically deleted when your session ends.
-- **Custom Naming**: Add a prefix and/or suffix to the new pod's name for easy identification.
-- **User Identification**: Automatically appends your sanitized git email or local hostname to the pod name. Can be disabled with the `--skip-identification` flag.
-- **Custom Labels**: Inject custom labels into the new pod.
-- **Inject Environment Variables**: Pass custom environment variables from a local file.
-- **JSON Logging**: Keeps a record of all created pods in a local `kmime_log.json` file.
-
 ## Installation
 
 ```bash
 go install github.com/heidiks/kmime@latest
 ```
 
-#### Buiding from Source
+#### Building from Source
 To build `kmime` from the source, you need to have Go installed.
 
 ```bash
