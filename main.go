@@ -43,11 +43,11 @@ without altering the original pod.`,
 
 		labels, err := parseLabels(labelStrs)
 		if err != nil {
-			log.Fatalf("❌ Error parsing labels: %v", err)
+			log.Fatalf("Error parsing labels: %v", err)
 		}
 		envs, err := parseEnvFile(envFile)
 		if err != nil {
-			log.Fatalf("❌ Error parsing env file: %v", err)
+			log.Fatalf("Error parsing env file: %v", err)
 		}
 
 		skipIdentification, _ := cmd.Flags().GetBool("skip-identification")
@@ -56,35 +56,35 @@ without altering the original pod.`,
 			var err error
 			user, err = getUserIdentifier()
 			if err != nil {
-				log.Fatalf("❌ Error getting user identifier: %v", err)
+				log.Fatalf("Error getting user identifier: %v", err)
 			}
-			log.Printf("✅ User identifier: %s", user)
+			log.Printf("User identifier: %s", user)
 		}
 
-		log.Println("🔄 Connecting to Kubernetes cluster...")
+		log.Println("Connecting to Kubernetes cluster...")
 		clientset, config, err := getKubeConfig()
 		if err != nil {
-			log.Fatalf("❌ Error connecting to Kubernetes: %v", err)
+			log.Fatalf("Error connecting to Kubernetes: %v", err)
 		}
-		log.Println("✅ Successfully connected to Kubernetes.")
+		log.Println("Successfully connected to Kubernetes.")
 
-		log.Printf("🔄 Fetching source pod '%s' in namespace '%s'...", sourcePod, namespace)
+		log.Printf("Fetching source pod '%s' in namespace '%s'...", sourcePod, namespace)
 		originalPod, err := getPod(clientset, namespace, sourcePod)
 		if err != nil {
-			log.Fatalf("❌ Error fetching source pod: %v", err)
+			log.Fatalf("Error fetching source pod: %v", err)
 		}
-		log.Printf("✅ Found source pod '%s'.", originalPod.Name)
+		log.Printf("Found source pod '%s'.", originalPod.Name)
 
-		log.Println("🔄 Generating new pod specification...")
+		log.Println("Generating new pod specification...")
 		newPod := clonePod(originalPod, user, commandToRun, prefix, suffix, labels, envs)
-		log.Printf("✅ New pod spec created with name '%s'.", newPod.Name)
+		log.Printf("New pod spec created with name '%s'.", newPod.Name)
 
-		log.Printf("🚀 Creating pod '%s'...", newPod.Name)
+		log.Printf("Creating pod '%s'...", newPod.Name)
 		createdPod, err := createPod(clientset, newPod)
 		if err != nil {
-			log.Fatalf("❌ Error creating pod: %v", err)
+			log.Fatalf("Error creating pod: %v", err)
 		}
-		log.Printf("✅ Pod '%s' created.", createdPod.Name)
+		log.Printf("Pod '%s' created.", createdPod.Name)
 
 		entry := logEntry{
 			Timestamp:  time.Now(),
@@ -99,31 +99,31 @@ without altering the original pod.`,
 			EnvFile:    envFile,
 		}
 		if err := appendLog(entry); err != nil {
-			log.Printf("⚠️  Could not write to log file: %v", err)
+			log.Printf("Could not write to log file: %v", err)
 		}
 
 		defer func() {
-			log.Printf("🧹 Cleaning up pod '%s'...", createdPod.Name)
+			log.Printf("Cleaning up pod '%s'...", createdPod.Name)
 			if err := deletePod(clientset, createdPod.Namespace, createdPod.Name); err != nil {
-				log.Printf("⚠️  Error deleting pod '%s': %v", createdPod.Name, err)
+				log.Printf("Error deleting pod '%s': %v", createdPod.Name, err)
 			} else {
-				log.Printf("✅ Pod '%s' deleted.", createdPod.Name)
+				log.Printf("Pod '%s' deleted.", createdPod.Name)
 			}
 		}()
 
-		log.Printf("⏳ Waiting for pod '%s' to be running...", createdPod.Name)
+		log.Printf("Waiting for pod '%s' to be running...", createdPod.Name)
 		err = waitForPodRunning(clientset, createdPod.Namespace, createdPod.Name, time.Minute*2)
 		if err != nil {
-			log.Fatalf("❌ Error waiting for pod: %v", err)
+			log.Fatalf("Error waiting for pod: %v", err)
 		}
 
-		log.Printf("🔗 Attaching to pod '%s'...", createdPod.Name)
+		log.Printf("Attaching to pod '%s'...", createdPod.Name)
 		err = attachToPod(clientset, config, createdPod.Namespace, createdPod.Name, commandToRun)
 		if err != nil {
-			log.Fatalf("❌ Error attaching to pod: %v", err)
+			log.Fatalf("Error attaching to pod: %v", err)
 		}
 
-		log.Println("✅ Session ended.")
+		log.Println("Session ended.")
 	},
 }
 
