@@ -83,7 +83,7 @@ If you want a cleaner pod name without the user identifier, use the `--skip-iden
 ```bash
 kmime my-app-pod-xyz -n production --skip-identification
 ```
-*This will create a pod named something like `my-app-pod-xyz-1234`.*
+This will create a pod named something like `my-app-pod-xyz-1234`.
 
 **6. Full Example**
 
