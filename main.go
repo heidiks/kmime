@@ -1,17 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
-	"time"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
-)
-
-var (
-	version = "dev"
-	commit  = "none"
-	date    = "unknown"
 )
 
 var rootCmd = &cobra.Command{
@@ -25,7 +20,6 @@ This is useful for tasks like running batch jobs or exploring a pod's environmen
 without altering the original pod.`,
 	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		sourcePod := args[0]
 		var commandToRun []string
 		if len(args) > 1 {
 			commandToRun = args[1:]
@@ -39,97 +33,65 @@ without altering the original pod.`,
 		labelStrs, _ := cmd.Flags().GetStringArray("label")
 		envFile, _ := cmd.Flags().GetString("env-file")
 
-		log.Println("Starting kmime...")
-
 		labels, err := parseLabels(labelStrs)
 		if err != nil {
-			log.Fatalf("Error parsing labels: %v", err)
+			log.Fatalf("Error processing labels: %v", err)
 		}
+
 		envs, err := parseEnvFile(envFile)
 		if err != nil {
-			log.Fatalf("Error parsing env file: %v", err)
+			log.Fatalf("Error processing env file: %v", err)
 		}
 
 		skipIdentification, _ := cmd.Flags().GetBool("skip-identification")
 		var user string
 		if !skipIdentification {
-			var err error
 			user, err = getUserIdentifier()
 			if err != nil {
 				log.Fatalf("Error getting user identifier: %v", err)
 			}
-			log.Printf("User identifier: %s", user)
 		}
 
-		log.Println("Connecting to Kubernetes cluster...")
-		clientset, config, err := getKubeConfig()
+		params := &kmimeParams{
+			sourcePod:    args[0],
+			commandToRun: commandToRun,
+			namespace:    namespace,
+			prefix:       prefix,
+			suffix:       suffix,
+			labels:       labels,
+			envs:         envs,
+			user:         user,
+			envFile:      envFile,
+		}
+
+		p := tea.NewProgram(NewModel(params))
+		if _, err := p.Run(); err != nil {
+			fmt.Printf("An error occurred during execution: %v\n", err)
+			os.Exit(1)
+		}
+	},
+}
+
+var historyCmd = &cobra.Command{
+	Use:   "history",
+	Short: "Displays the execution history of kmime.",
+	Run: func(cmd *cobra.Command, args []string) {
+		model, err := NewHistoryModel()
 		if err != nil {
-			log.Fatalf("Error connecting to Kubernetes: %v", err)
-		}
-		log.Println("Successfully connected to Kubernetes.")
-
-		log.Printf("Fetching source pod '%s' in namespace '%s'...", sourcePod, namespace)
-		originalPod, err := getPod(clientset, namespace, sourcePod)
-		if err != nil {
-			log.Fatalf("Error fetching source pod: %v", err)
-		}
-		log.Printf("Found source pod '%s'.", originalPod.Name)
-
-		log.Println("Generating new pod specification...")
-		newPod := clonePod(originalPod, user, commandToRun, prefix, suffix, labels, envs)
-		log.Printf("New pod spec created with name '%s'.", newPod.Name)
-
-		log.Printf("Creating pod '%s'...", newPod.Name)
-		createdPod, err := createPod(clientset, newPod)
-		if err != nil {
-			log.Fatalf("Error creating pod: %v", err)
-		}
-		log.Printf("Pod '%s' created.", createdPod.Name)
-
-		entry := logEntry{
-			Timestamp:  time.Now(),
-			NewPodName: createdPod.Name,
-			SourcePod:  sourcePod,
-			Namespace:  namespace,
-			User:       user,
-			Command:    commandToRun,
-			Prefix:     prefix,
-			Suffix:     suffix,
-			Labels:     labels,
-			EnvFile:    envFile,
-		}
-		if err := appendLog(entry); err != nil {
-			log.Printf("Could not write to log file: %v", err)
+			log.Fatalf("Error creating history view: %v", err)
 		}
 
-		defer func() {
-			log.Printf("Cleaning up pod '%s'...", createdPod.Name)
-			if err := deletePod(clientset, createdPod.Namespace, createdPod.Name); err != nil {
-				log.Printf("Error deleting pod '%s': %v", createdPod.Name, err)
-			} else {
-				log.Printf("Pod '%s' deleted.", createdPod.Name)
-			}
-		}()
-
-		log.Printf("Waiting for pod '%s' to be running...", createdPod.Name)
-		err = waitForPodRunning(clientset, createdPod.Namespace, createdPod.Name, time.Minute*2)
-		if err != nil {
-			log.Fatalf("Error waiting for pod: %v", err)
+		p := tea.NewProgram(model)
+		if _, err := p.Run(); err != nil {
+			fmt.Printf("An error occurred during execution: %v\n", err)
+			os.Exit(1)
 		}
-
-		log.Printf("Attaching to pod '%s'...", createdPod.Name)
-		err = attachToPod(clientset, config, createdPod.Namespace, createdPod.Name, commandToRun)
-		if err != nil {
-			log.Fatalf("Error attaching to pod: %v", err)
-		}
-
-		log.Println("Session ended.")
 	},
 }
 
 func Execute() {
+	rootCmd.AddCommand(historyCmd)
 	if err := rootCmd.Execute(); err != nil {
-		log.Println(err)
 		os.Exit(1)
 	}
 }
