@@ -94,6 +94,8 @@ func clonePod(originalPod *v1.Pod, user string, command []string, prefix, suffix
 	}
 	newPod.Spec.RestartPolicy = v1.RestartPolicyNever
 	if len(newPod.Spec.Containers) > 0 {
+		newPod.Spec.Containers[0].Command = command
+		newPod.Spec.Containers[0].Args = nil
 		newPod.Spec.Containers[0].TTY = true
 		newPod.Spec.Containers[0].Stdin = true
 
@@ -152,9 +154,9 @@ func waitForPodRunning(clientset *kubernetes.Clientset, namespace, podName strin
 				return fmt.Errorf("unexpected object type in watch: %T", event.Object)
 			}
 			switch pod.Status.Phase {
-			case v1.PodRunning:
+			case v1.PodRunning, v1.PodSucceeded:
 				return nil
-			case v1.PodFailed, v1.PodSucceeded:
+			case v1.PodFailed:
 				return fmt.Errorf("pod terminated unexpectedly with phase %s", pod.Status.Phase)
 			}
 		case <-time.After(timeout):
@@ -181,9 +183,6 @@ func attachToPod(clientset *kubernetes.Clientset, config *rest.Config, namespace
 		Name(podName).
 		Namespace(namespace).
 		SubResource("attach")
-	for _, c := range command {
-		req.Param("command", c)
-	}
 	req.VersionedParams(&v1.PodAttachOptions{
 		Container: "",
 		Stdin:     true,
@@ -232,10 +231,8 @@ func attachToPod(clientset *kubernetes.Clientset, config *rest.Config, namespace
 		Tty:               true,
 		TerminalSizeQueue: sizeQueue,
 	})
-	if err != nil {
-		return nil
-	}
-	return nil
+
+	return err
 }
 
 func getUserIdentifier() (string, error) {
