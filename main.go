@@ -7,6 +7,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
+	"sigs.k8s.io/yaml"
 )
 
 var rootCmd = &cobra.Command{
@@ -32,6 +33,7 @@ without altering the original pod.`,
 		suffix, _ := cmd.Flags().GetString("suffix")
 		labelStrs, _ := cmd.Flags().GetStringArray("label")
 		envFile, _ := cmd.Flags().GetString("env-file")
+		preview, _ := cmd.Flags().GetBool("preview")
 
 		labels, err := parseLabels(labelStrs)
 		if err != nil {
@@ -50,6 +52,31 @@ without altering the original pod.`,
 			if err != nil {
 				log.Fatalf("Error getting user identifier: %v", err)
 			}
+		}
+
+		if preview {
+			clientset, _, err := getKubeConfig()
+			if err != nil {
+				log.Fatalf("Could not get Kubernetes config: %v", err)
+			}
+			originalPod, err := getPod(clientset, namespace, args[0])
+			if err != nil {
+				log.Fatalf("Could not get source pod: %v", err)
+			}
+
+			podSpec := clonePod(originalPod, user, commandToRun, prefix, suffix, labels, envs)
+			yamlData, err := yaml.Marshal(podSpec)
+			if err != nil {
+				log.Fatalf("Could not marshal pod spec to YAML: %v", err)
+			}
+
+			fileName := "kmime-preview.yaml"
+			err = os.WriteFile(fileName, yamlData, 0644)
+			if err != nil {
+				log.Fatalf("Could not write YAML to file: %v", err)
+			}
+			fmt.Printf("Pod specification saved to %s\n", fileName)
+			return
 		}
 
 		params := &kmimeParams{
@@ -104,6 +131,7 @@ func init() {
 	rootCmd.Flags().StringArrayP("label", "l", []string{}, "Add a label to the new pod (e.g., -l key=value)")
 	rootCmd.Flags().String("env-file", "", "Path to a file with environment variables to add to the pod")
 	rootCmd.Flags().Bool("skip-identification", false, "Skip appending user identification to the pod name")
+	rootCmd.Flags().Bool("preview", false, "Preview the generated pod specification as YAML without creating it")
 }
 
 func main() {

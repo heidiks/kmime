@@ -83,6 +83,9 @@ func clonePod(originalPod *v1.Pod, user string, command []string, prefix, suffix
 		finalLabels[k] = v
 	}
 
+	delete(finalLabels, "pod-template-hash")
+	finalLabels["kmime-clone"] = "true"
+
 	newPod := &v1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        podName,
@@ -92,12 +95,24 @@ func clonePod(originalPod *v1.Pod, user string, command []string, prefix, suffix
 		},
 		Spec: *originalPod.Spec.DeepCopy(),
 	}
+
+	newPod.ObjectMeta.UID = ""
+	newPod.ObjectMeta.ResourceVersion = ""
+	newPod.ObjectMeta.CreationTimestamp = metav1.Time{}
+	newPod.Status = v1.PodStatus{}
+
 	newPod.Spec.RestartPolicy = v1.RestartPolicyNever
+	newPod.Spec.Affinity = nil
+
 	if len(newPod.Spec.Containers) > 0 {
 		newPod.Spec.Containers[0].Command = command
 		newPod.Spec.Containers[0].Args = nil
 		newPod.Spec.Containers[0].TTY = true
 		newPod.Spec.Containers[0].Stdin = true
+
+		newPod.Spec.Containers[0].LivenessProbe = nil
+		newPod.Spec.Containers[0].ReadinessProbe = nil
+		newPod.Spec.Containers[0].StartupProbe = nil
 
 		envMap := make(map[string]v1.EnvVar)
 		for _, env := range newPod.Spec.Containers[0].Env {
